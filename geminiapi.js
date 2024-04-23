@@ -1,3 +1,5 @@
+const { getProductModel } = require("./models/ModelProduct");
+const { SubTopicList } = getProductModel();
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 const dotenv = require("dotenv");
 dotenv.config();
@@ -13,20 +15,99 @@ async function geminiapi(req, resp) {
         const result = await model.generateContent(prompt);
         const response = await result.response;
         const text = response.text();
+        console.log(text);
         const jsontext = JSON.parse(text);
         console.log(jsontext);
-        resp.set("json");
-        resp.json({ response: text , status: true});
-        
+        const existingInfo = await SubTopicList.findOne({ email: req.body.email });
+        if (existingInfo) {
+            existingInfo.topics.push({
+                topic: req.body.topic,
+                subtopic: jsontext.subtopics
+            });
+            await existingInfo.save();
+            resp.set("json");
+            resp.json({ status: true, rec: existingInfo, out: "yay" });
+        }
+        else {
+            const obj = {
+                "email": req.body.email,
+                "topics": [{
+                    "topic": req.body.topic,
+                    "subtopic": jsontext.subtopics
+                }],
+            }
+            console.log(obj);
+            const info = new SubTopicList(obj);
+            info.save().then((ans) => {
+                console.log(ans);
+                resp.set("json");
+                resp.json({ status: true, rec: ans, out: "yay" });
+            })
+        }
+
     } catch (error) {
         console.error("Error:", error);
-        resp.status(500).json({ error: "An error occurred" ,  status: false });
+        resp.status(500).json({ error: "An error occurred", status: false });
     }
 }
 
-async function getTest(req , resp)
-{
+
+// async function insertQuestionsIntoSubtopic(email, topic, subtopic, questions) {
+//     SubTopicList.find({ email: email }).then((result) => {
+//         const [{ topics: topicsArray }] = result;
+//         console.log(topicsArray);
+//         const foundTopic = topicsArray.find(topicObj => topicObj.topic === topic);
+//         if (foundTopic) {
+//             const foundSubtopic = foundTopic.subtopic;
+//             const ans = foundSubtopic.find(subtopicObj => subtopicObj['subtopic name'] === subtopic);
+//             if (ans) {
+//                 ans.test.push({
+//                     'test number': ans.test.length + 1,
+//                     Questions: questions
+//                 });
+//                 await ans.save();
+//                 return ans;
+//             }
+//         } else {
+//             console.log("Topic not found");
+//         }
+//     }).catch((err) => {
+//         console.log(err);
+//     })
+// }
+
+async function insertQuestionsIntoSubtopic(email, topic, subtopic, questions, resp) {
     try {
+        const result = await SubTopicList.find({ email: email });
+        const [{ topics: topicsArray }] = result;
+        console.log(topicsArray);
+        const foundTopic = topicsArray.find(topicObj => topicObj.topic === topic);
+        if (foundTopic) {
+            const foundSubtopic = foundTopic.subtopic;
+            const ans = foundSubtopic.find(subtopicObj => subtopicObj['subtopic name'] === subtopic);
+            if (ans) {
+                ans.test.push({
+                    'test number': ans.test.length + 1,
+                    Questions: questions
+                });
+                await ans.save(); // Wait for the save operation to complete
+                return ans;
+            }
+        } else {
+            console.log("Topic not found");
+        }
+    } catch (err) {
+        console.log(err);
+    }
+}
+
+
+
+
+
+async function getTest(req, resp) {
+    try {
+        const email = req.body.email;
         const topic = req.body.topic;
         const subtopic = req.body.subtopic;
         const model = genAI.getGenerativeModel({ model: "gemini-pro" });
@@ -35,17 +116,32 @@ async function getTest(req , resp)
         const result = await model.generateContent(prompt);
         const response = await result.response;
         const text = response.text();
-        resp.set("json");
-        resp.json({ response: text , status: true});
-        
+        const ans = await insertQuestionsIntoSubtopic(email, topic, subtopic, text.questions);
+        console.log(ans);
+
+        // const obj = {
+        //     "email": req.body.email,
+        //     "topics": [{
+        //         "topic": req.body.topic,
+        //         "subtopic": text.subtopics
+        //     }],
+        // }
+        // const info = new SubTopicList(obj);
+        // info.save().then((ans) => {
+        //     console.log(ans);
+            resp.set("json");
+            resp.json({ status: true, rec: ans, out: "yay" });
+        // })
+        // resp.set("json");
+        // resp.json({ response: text, status: true });
+
     } catch (error) {
         console.error("Error:", error);
         resp.status(500).json({ error: "An error occurred" });
     }
 }
 
-async function getDetails(req , resp)
-{
+async function getDetails(req, resp) {
     console.log(req.body);
     try {
         const topic = req.body.topic;
@@ -57,12 +153,12 @@ async function getDetails(req , resp)
         const response = await result.response;
         const text = response.text();
         resp.set("json");
-        resp.json({ response: text , status: true});
-        
+        resp.json({ response: text, status: true });
+
     } catch (error) {
         console.error("Error:", error);
         resp.status(500).json({ error: "An error occurred" });
     }
 }
 
-module.exports = { geminiapi , getTest , getDetails }
+module.exports = { geminiapi, getTest, getDetails }
