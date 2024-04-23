@@ -13,5 +13,5 @@ const subtopicSchema = mongoose.Schema({
         versionKey: false,
     }
 );
-
+ 
 module.exports = mongoose.model('Subtopic', subtopicSchema)

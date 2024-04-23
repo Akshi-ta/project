@@ -21,11 +21,11 @@ async function fetchSubtopics(req, resp) {
         const existingInfo = await User.findOne({ email: req.body.email });
         let list = [];
 
-        for (const obj in jsontext.subtopics) {
+        for (let i=0; i<jsontext.subtopics.length; i++) {
             const newSubTopic = new Subtopic({
-                'subtopic number': obj["subtopic number"],
-                'subtopic name': obj["subtopic name"],
-                'duration': obj["duration"]
+                'subtopic number': jsontext.subtopics[i]["subtopic number"],
+                'subtopic name': jsontext.subtopics[i]["subtopic name"],
+                'duration': jsontext.subtopics[i]["duration"],
             });
             await newSubTopic.save();
             list.push(newSubTopic._id);
