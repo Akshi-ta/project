@@ -52,8 +52,10 @@ async function geminiapi(req, resp) {
 }
 
 
-// async function insertQuestionsIntoSubtopic(email, topic, subtopic, questions) {
-//     SubTopicList.find({ email: email }).then((result) => {
+
+// async function insertQuestionsIntoSubtopic(email, topic, subtopic, questions, resp) {
+//     try {
+//         const result = await SubTopicList.find({ email: email });
 //         const [{ topics: topicsArray }] = result;
 //         console.log(topicsArray);
 //         const foundTopic = topicsArray.find(topicObj => topicObj.topic === topic);
@@ -65,41 +67,44 @@ async function geminiapi(req, resp) {
 //                     'test number': ans.test.length + 1,
 //                     Questions: questions
 //                 });
-//                 await ans.save();
-//                 return ans;
+//                 await ans.save(); // Wait for the save operation to complete
+//                 return result;
 //             }
 //         } else {
 //             console.log("Topic not found");
 //         }
-//     }).catch((err) => {
+//     } catch (err) {
 //         console.log(err);
-//     })
+//     }
 // }
 
 async function insertQuestionsIntoSubtopic(email, topic, subtopic, questions, resp) {
     try {
-        const result = await SubTopicList.find({ email: email });
-        const [{ topics: topicsArray }] = result;
-        console.log(topicsArray);
-        const foundTopic = topicsArray.find(topicObj => topicObj.topic === topic);
-        if (foundTopic) {
-            const foundSubtopic = foundTopic.subtopic;
-            const ans = foundSubtopic.find(subtopicObj => subtopicObj['subtopic name'] === subtopic);
-            if (ans) {
-                ans.test.push({
-                    'test number': ans.test.length + 1,
-                    Questions: questions
-                });
-                await ans.save(); // Wait for the save operation to complete
-                return ans;
+        const result = await SubTopicList.findOne({ email: email });
+        if (result) {
+            const { topics } = result;
+            const foundTopic = topics.find(topicObj => topicObj.topic === topic);
+            if (foundTopic) {
+                const foundSubtopic = foundTopic.subtopic.find(subtopicObj => subtopicObj['subtopic name'] === subtopic);
+                if (foundSubtopic) {
+                    foundSubtopic.test.push({
+                        'test number': foundSubtopic.test.length + 1,
+                        Questions: questions
+                    });
+                    await result.save(); // Save the updated SubTopicList document
+                    return result;
+                }
+            } else {
+                console.log("Topic not found");
             }
         } else {
-            console.log("Topic not found");
+            console.log("Email not found");
         }
     } catch (err) {
         console.log(err);
     }
 }
+
 
 
 
@@ -118,22 +123,8 @@ async function getTest(req, resp) {
         const text = response.text();
         const ans = await insertQuestionsIntoSubtopic(email, topic, subtopic, text.questions);
         console.log(ans);
-
-        // const obj = {
-        //     "email": req.body.email,
-        //     "topics": [{
-        //         "topic": req.body.topic,
-        //         "subtopic": text.subtopics
-        //     }],
-        // }
-        // const info = new SubTopicList(obj);
-        // info.save().then((ans) => {
-        //     console.log(ans);
-            resp.set("json");
-            resp.json({ status: true, rec: ans, out: "yay" });
-        // })
-        // resp.set("json");
-        // resp.json({ response: text, status: true });
+        resp.set("json");
+        resp.json({ status: true, rec: ans, out: "yay" });
 
     } catch (error) {
         console.error("Error:", error);
