@@ -1,7 +1,9 @@
 const express = require("express");
-const {geminiapi , getTest, getDetails } = require("./geminiapi")
+const { fetchSubtopics } = require("./controllers/topicController");
+// const {geminiapi , getTest, getDetails } = require("./geminiapi")
+
 const app = express.Router();
-app.post("/add", geminiapi );    //IP: topic name -> OP: subtopics
-app.post("/test" , getTest);     //IP: topic name, subtopic name -> OP: MCQs
-app.post("/learn" , getDetails); //IP: topic name, subtopic name -> OP: detailed explanation
+app.post("/add", fetchSubtopics );
+// app.post("/test" , getTest);
+// app.post("/learn" , getDetails);
 module.exports = app;
