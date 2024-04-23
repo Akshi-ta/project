@@ -13,8 +13,8 @@ async function geminiapi(req, resp) {
         const result = await model.generateContent(prompt);
         const response = await result.response;
         const text = response.text();
-        const jsontext = JSON.parse(text);
-        console.log(jsontext);
+        // const jsontext = JSON.parse(text);
+        // console.log(jsontext);
         resp.set("json");
         resp.json({ response: text , status: true});
         
@@ -30,17 +30,16 @@ async function getTest(req , resp)
         const topic = req.body.topic;
         const subtopic = req.body.subtopic;
         const model = genAI.getGenerativeModel({ model: "gemini-pro" });
-        const prompt = `i will give you the subtopic as input and you have to provide the test of 5 MCQs for each subtopic. Output must be of the form {"subtopic":"subtopicname" , "Questions" : [{"question number" : "question number" , "Question" : "Question" , "options":["a", "b", "c", "d"] , "correct option" : "correct option"}]}
+        const prompt = `i will give you the subtopic as input and you have to provide the test of 5 MCQs for each subtopic. Output must be of the form {"subtopic":"subtopicname" , "Questions" : [{"question number" : "question number" , "Question" : "Question" , "options":["a", "b", "c", "d"] , "correct option" : 0}]}
         input: topic =  ${topic} , subtopic = ${subtopic}`;
         const result = await model.generateContent(prompt);
         const response = await result.response;
         const text = response.text();
         resp.set("json");
         resp.json({ response: text , status: true});
-        
     } catch (error) {
         console.error("Error:", error);
-        resp.status(500).json({ error: "An error occurred" });
+        resp.status(500).json({ error: "An error occurred", status: false});
     }
 }
 
