@@ -1,6 +1,9 @@
 const User = require("../models/user")
+const Topic = require("../models/topic")
+const Subtopic = require("../models/subtopic")
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 const dotenv = require("dotenv");
+const subtopic = require("../models/subtopic");
 dotenv.config();
 const genAI = new GoogleGenerativeAI(process.env.API_KEY);
 
@@ -14,35 +17,41 @@ async function fetchSubtopics(req, resp) {
         const result = await model.generateContent(prompt);
         const response = await result.response;
         const text = response.text();
-        console.log(text);
         const jsontext = JSON.parse(text);
-        console.log(jsontext);
-        const existingInfo = User.findOne({ email: req.body.email });
-        console.log(existingInfo);
-        if (existingInfo) {
-            existingInfo.topics.push({
-                topic: req.body.topic,
-                subtopic: jsontext.subtopics
+        const existingInfo = await User.findOne({ email: req.body.email });
+        let list = [];
+
+        for (const obj in jsontext.subtopics) {
+            const newSubTopic = new Subtopic({
+                'subtopic number': obj["subtopic number"],
+                'subtopic name': obj["subtopic name"],
+                'duration': obj["duration"]
             });
+            await newSubTopic.save();
+            list.push(newSubTopic._id);
+        }
+
+
+        const newTopic = new Topic({
+            topic: req.body.topic,
+            subtopic: list,
+        });
+        await newTopic.save();
+        if (existingInfo) {
+            let topicList = existingInfo.topics;
+            topicList.push(newTopic._id);
+            existingInfo.topics = topicList;
             await existingInfo.save();
-            resp.set("json");
-            resp.json({ status: true, rec: existingInfo, out: "yay" });
+            resp.json({ status: true, out: existingInfo });
         }
         else {
-            const obj = {
-                "email": req.body.email,
-                "topics": [{
-                    "topic": req.body.topic,
-                    "subtopic": jsontext.subtopics
-                }],
-            }
-            console.log(obj);
-            const info = new SubTopicList(obj);
-            info.save().then((ans) => {
-                console.log(ans);
-                resp.set("json");
-                resp.json({ status: true, rec: ans, out: "yay" });
-            })
+            let newUser = User({
+                email: req.body.email,
+                topics: [newTopic._id]
+            });
+            await newUser.save();
+            resp.set("json");
+            resp.json({ status: true, out: newUser });
         }
 
     } catch (error) {
