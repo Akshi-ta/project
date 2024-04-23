@@ -4,6 +4,7 @@ const Subtopic = require("../models/subtopic")
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 const dotenv = require("dotenv");
 const subtopic = require("../models/subtopic");
+const History = require("../models/history")
 dotenv.config();
 const genAI = new GoogleGenerativeAI(process.env.API_KEY);
 
@@ -18,18 +19,27 @@ async function fetchSubtopics(req, resp) {
         const response = await result.response;
         const text = response.text();
         const jsontext = JSON.parse(text);
+        console.log(jsontext);
         const existingInfo = await User.findOne({ email: req.body.email });
         let list = [];
-
-        for (const obj in jsontext.subtopics) {
+        for (let i = 0; i< jsontext.subtopics.length ; i++) {
+            console.log(jsontext.subtopics[i]);
+            const history = new History({
+                "history": []
+            });
+            const savedHistory = await history.save();
             const newSubTopic = new Subtopic({
-                'subtopic number': obj["subtopic number"],
-                'subtopic name': obj["subtopic name"],
-                'duration': obj["duration"]
+                'subtopic number': jsontext.subtopics[i]["subtopic number"],
+                'subtopic name': jsontext.subtopics[i]["subtopic name"],
+                duration: jsontext.subtopics[i]["duration"],
+                learn: savedHistory._id
             });
             await newSubTopic.save();
             list.push(newSubTopic._id);
+
         }
+
+        // console.log(list);
 
 
         const newTopic = new Topic({
@@ -45,6 +55,7 @@ async function fetchSubtopics(req, resp) {
             resp.json({ status: true, out: existingInfo });
         }
         else {
+            // console.log(newTopic);
             let newUser = User({
                 email: req.body.email,
                 topics: [newTopic._id]
