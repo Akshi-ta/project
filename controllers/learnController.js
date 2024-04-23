@@ -13,32 +13,33 @@ const dotenv = require("dotenv");
 dotenv.config();
 const genAI = new GoogleGenerativeAI(process.env.API_KEY);
 
-async function insertTextIntoLearn(subtopicID, jsonstring) {
+async function insertTextIntoLearn(subtopicID, message, topicName, subtopicName) {
     try {
         const subtopic = await Subtopic.findById(subtopicID);
         if (!subtopic) {
             return { status: false, rec: null, out: "Subtopic not found" };
         }
-        const learnId = subtopic.learn;
+        const learnId = subtopic.learn.chat;
         console.log(learnId);
         const history = await History.findById(learnId);
-        const model = genAI.getGenerativeModel({ model: "gemini-pro" });
         var chatHistory = [];
+
         if (!history.history.length) {
             chatHistory = [
                 {
                     role: "user",
-                    parts: [{ text: `this JSON contains the theory of a topic ${jsonstring}` }]
-                },
-                {
-                    role: "model",
-                    parts: [{ text: "Thanks for providing the theory" },]
+                    parts: [{ text: `Below is the explanation for the topic ${topicName} and subtopic ${subtopicName} you gave. you are a online tutor and now you are required to answer the questions of a student who might have read this explanation but still doesn't fully undersntand it. you are required to judge the students understanding level and answer accordingly. Explanation: ${subtopic.learn.explanation}` }]
+                }, 
+                { 
+                    role: "model", 
+                    parts: [{ text: "Thanks for providing the questions" } ,] 
                 }
             ];
-            // console.log(history.history[0].parts[0]);
-        } else {
+        }else{
             chatHistory = history.history;
         }
+
+        const model = genAI.getGenerativeModel({ model: "gemini-pro" });
         const chat = model.startChat({
             history: chatHistory,
         });
@@ -59,19 +60,23 @@ async function getDetails(req, resp) {
     try {
         const topicName = req.body.topicName;
         const subtopicName = req.body.subtopicName;
-        const subtopic = req.body.subtopic;
-        const model = genAI.getGenerativeModel({ model: "gemini-pro" });
-        const prompt = `give the detailed explanation using diagrams and everything to explain the given input in the good presented and detailed way like you are teaching to someone who have no idea of the given topic, output must not contain any letter which cannot be parsed by JSON.parse
-        input: topic =  ${topicName} , subtopic = ${subtopicName}`;
-        const result = await model.generateContent(prompt);
-        const response = await result.response;
-        const text = response.text();
-        console.log(JSON.stringify(text));
-        const ans = await insertTextIntoLearn(subtopic, JSON.stringify(text));
-        // // console.log(ans);
-        // resp.set("json");
-        // resp.json({ status: true, rec: ans, out: "yay" });
+        const subtopicId = req.body.subtopicId;
 
+        const subtopic = await Subtopic.findById(subtopicId);
+
+        if (subtopic.learn.explanation !== "") {
+            console.log(history.history);
+        } else {
+            const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+            const prompt = `give the detailed explanation using diagrams and everything to explain the given input in the good presented and detailed way like you are teaching to someone who have no idea of the given topic, output must not contain any letter which cannot be parsed by JSON.parse
+        input: topic =  ${topicName} , subtopic = ${subtopicName}`;
+            const result = await model.generateContent(prompt);
+            const response = await result.response;
+            const text = response.text();
+            subtopic.learn.explanation = text;
+            await subtopic.save();
+            resp.json({ status: true, response: text });
+        }
     } catch (error) {
         console.error("Error:", error);
         resp.status(500).json({ error: "An error occurred" });
@@ -79,10 +84,13 @@ async function getDetails(req, resp) {
 }
 
 async function getLearnChat(req, resp) {
-    const message  = req.body.message;
+    const message = req.body.message;
     const subtopicId = req.body.subtopicId;
-    insertTextIntoLearn(subtopicId , message);
+    const subtopicName = req.body.subtopicName;
+    const topicName = req.body.topicName;
+    var response = await insertTextIntoLearn(subtopicId, message, topicName, subtopicName);
+    resp.json({ status: true, response: response });
 }
 
 
-module.exports = { getDetails , getLearnChat }
+module.exports = { getDetails, getLearnChat }

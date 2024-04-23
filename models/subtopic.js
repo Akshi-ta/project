@@ -4,8 +4,13 @@ const subtopicSchema = mongoose.Schema({
     'subtopic name': { type: String },
     'duration': { type: String },
     'learn': {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'History'
+        explanation: {
+            type: String
+        },
+        chat:{
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'History'
+        }
     },
     'test': [{
         type: mongoose.Schema.Types.ObjectId,

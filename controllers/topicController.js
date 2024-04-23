@@ -32,7 +32,10 @@ async function fetchSubtopics(req, resp) {
                 'subtopic number': jsontext.subtopics[i]["subtopic number"],
                 'subtopic name': jsontext.subtopics[i]["subtopic name"],
                 duration: jsontext.subtopics[i]["duration"],
-                learn: savedHistory._id
+                learn: {
+                    explanation: "",
+                    chat: savedHistory._id
+                }
             });
             await newSubTopic.save();
             list.push(newSubTopic._id);
