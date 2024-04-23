@@ -7,7 +7,10 @@ const testSchema = mongoose.Schema({
         ref: 'Question'
     }],
     
-    // "Conversation": [conversationSchema]
+    "Conversation": {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'History'
+        }
 },
 {
     versionKey: false,
