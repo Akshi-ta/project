@@ -23,8 +23,8 @@ mongoose.connect(server).then(() => {
 app.use(express.urlencoded(true));
 app.use("/product", Router);
 
-app.use('/login', (req, res) => {
-    res.send({
-        token: 'test123'
-    });
-});
+// app.use('/login', (req, res) => {
+//     res.send({
+//         token: 'test123'
+//     });
+// });

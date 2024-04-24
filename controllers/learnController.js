@@ -32,7 +32,7 @@ async function insertTextIntoLearn(subtopicID, message, topicName, subtopicName)
                 }, 
                 { 
                     role: "model", 
-                    parts: [{ text: "Thanks for providing the questions" } ,] 
+                    parts: [{ text: "Thanks for providing the explanation" } ,] 
                 }
             ];
         }else{
@@ -65,7 +65,8 @@ async function getDetails(req, resp) {
         const subtopic = await Subtopic.findById(subtopicId);
 
         if (subtopic.learn.explanation !== "") {
-            console.log(history.history);
+            console.log(subtopic.learn.explanation);
+            resp.json({ status: true, response: subtopic.learn.explanation });
         } else {
             const model = genAI.getGenerativeModel({ model: "gemini-pro" });
             const prompt = `give the detailed explanation using diagrams and everything to explain the given input in the good presented and detailed way like you are teaching to someone who have no idea of the given topic, output must not contain any letter which cannot be parsed by JSON.parse
