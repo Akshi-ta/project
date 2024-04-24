@@ -92,6 +92,7 @@ async function getTestChat(req, resp) {
         const testId = req.body.testId;
         const message = req.body.message;
         const test = await Test.findById(testId);
+        console.log(test);
 
         //1. get history of that test conversation
         const historyId = test.Conversation;
