@@ -77,7 +77,7 @@ async function getTest(req, resp) {
         const ans = await insertTestIntoSubtopic(subtopic, questions);
         // console.log(ans);
         resp.set("json");
-        resp.json({ status: true, rec: ans, out: "yay" });
+        resp.json({ status: true, response: ans, out: "yay" });
 
     } catch (error) {
         console.error("Error:", error);
