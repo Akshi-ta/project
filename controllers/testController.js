@@ -86,17 +86,6 @@ async function addTest(req, resp) {
     }
 }
 
-// function removeIdField(history) {
-//     var list = [];
-//     for(let i=0; history.length; i++){
-//         console.log(history[i]);
-//         list.push({
-//             role: history[i].role,
-//             parts: history[i].parts
-//         });
-//     }
-//     return list;
-// }
 
 async function getTestChat(req, resp) {
     try {
