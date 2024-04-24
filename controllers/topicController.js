@@ -14,7 +14,7 @@ async function fetchSubtopics(req, resp) {
     try {
         const topic = req.body.topic;
         const model = genAI.getGenerativeModel({ model: "gemini-pro" });
-        const prompt = `i will provide you a input from user which is the topic he want to learn from you. i want you to break that topic into smaller topics whose order will be from basic and easiest to advanced and hard, also give the average time taken by the student to learn that topic. output must be in the form of {"topic":"topic_name",  "subtopics":[ {"subtopic number" : "subtopic number" , "subtopic name" : "subtopic name"  , "duration":"duration"} ]} , input = ${JSON.stringify(topic)}`;
+        const prompt = `i will provide you a input from user which is the topic he want to learn from you. i want you to break that topic into smaller topics whose order will be from basic and easiest to advanced and hard, also give the average time taken by the student to learn that topic. output must be in the form of {"topic":"topic_name",  "subtopics":[ {"subtopic number" : "subtopic number" , "subtopic name" : "subtopic name"  , "duration":"duration"} ]} ensure that the response doesn't contain any character that make the response invalid json. valid json only , input = ${JSON.stringify(topic)}`;
         const result = await model.generateContent(prompt);
         const response = await result.response;
         const text = response.text();
