@@ -15,5 +15,5 @@ const testSchema = mongoose.Schema({
 {
     versionKey: false,
 });
- 
+
 module.exports = mongoose.model('Test', testSchema)

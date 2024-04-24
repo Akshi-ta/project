@@ -10,5 +10,5 @@ const questionSchema = mongoose.Schema({
     "correct option": { type: Number },
     "Selected Option": { type: Number }
 })
-
+ 
 module.exports = mongoose.model('Question', questionSchema)

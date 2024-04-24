@@ -52,14 +52,14 @@ async function insertTestIntoSubtopic(subtopicID, questions) {
         const savedTest = await test.save();
         //add test to subtopic
         subtopic.test.push(savedTest._id);
-        const updatedSubtopic = await subtopic.save();
-        return { status: true, rec: updatedSubtopic, out: "Test added successfully" };
+        await subtopic.save();
+        return { status: true, rec: test._id, out: "Test added successfully" };
     } catch (err) {
         console.log(err);
     }
 }
 
-async function getTest(req, resp) {
+async function addTest(req, resp) {
     try {
         const topicName = req.body.topicName;
         const subtopicName = req.body.subtopicName;
@@ -105,7 +105,6 @@ async function getTestChat(req, resp) {
 
         //1. get history of that test conversation
         const historyId = test.Conversation;
-        console.log(historyId);
         const history = await History.findById(historyId);
         const model = genAI.getGenerativeModel({ model: "gemini-pro" });
 
@@ -133,35 +132,87 @@ async function getTestChat(req, resp) {
             chatHistory = history.history;
         }
 
-        // console.log(chatHistory);
-
 
         const chat = model.startChat({
             history: chatHistory,
         });
-        const result = await chat.sendMessage(message);
-        const response = await result.response;
+        const msg = `Above is the chat history between you, the online tutor, and a student. The user has given a test whose details are provided in the history's first message from the user. you are required to give a friendly answer to the student. judge from the above chat the understanding level of the student and provide a suitable answer. The student has asked you the following question: ${message}`;
+        const result = await chat.sendMessage(msg);
+        const response = result.response;
         const text = response.text();
 
         history.history = await chat.getHistory();
         await history.save();
-        
+
 
         resp.json({ status: true, out: text })
-
-
-
-        // const msg = `Above is the chat history between you, the online tutor, and a student. The user has given a test whose details are provided in the history's first message from the user. you are required to give a friendly answer to the student. judge from the above chat the understanding level of the student and provide a suitable answer. The student has asked you the following question: ${message}`;
-        // const msg =
-
-        //2. give to gemini -> add the message to the history
-        //3. save the history
-        //4. return the response
     } catch (error) {
         console.error("Error:", error);
         resp.status(500).json({ error: "An error occurred" });
     }
 }
 
+async function getTest(req, resp) {
+    try {
+        const subtopicId = req.params.subtopicId;
+        const subtopic = await Subtopic.findById(subtopicId);
+        if (!subtopic) {
+            resp.json({ status: false, out: "Subtopic not found" });
+        }
+        const list = [];
+        for(var i=0; i<subtopic.test.length; i++){
+            var test = await Test.findById(subtopic.test[i]._id)
+            var questionsList = [];
 
-module.exports = { getTest, getTestChat }
+            for(var j=0; j<test.Questions.length; j++){
+                var question = await Question.findById(test.Questions[j]);
+                questionsList.push(question);
+            }
+            list.push({
+                "_id": test._id,
+                "test number": test["test number"],
+                "Questions": questionsList,
+                "Conversation": test.Conversation
+            });
+        }
+        resp.json({ status: true, rec: {
+            'subtopic number': subtopic["subtopic number"],
+            'subtopic name': subtopic["subtopic name"],
+            'duration': subtopic.duration,
+            'learn': {
+                explanation: subtopic.learn.explanation,
+                chat:subtopic.learn.chat
+            },
+            'test': list
+        }, out: "yay" });
+    } catch (error) {
+        console.error("Error:", error);
+        resp.status(500).json({ error: "An error occurred" });
+    }
+
+}
+
+async function saveSelectedOptionsToTest(req, res) {
+    try {
+        const testId = req.body.testId;
+        const answers = JSON.parse(req.body.answers);
+        const test = await Test.findById(testId);
+        if (!test) {
+            res.json({ status: false, out: "Test not found" });
+        }
+        console.log(answers.length);
+        for (let i = 0; i < answers.length; i++) {
+            const question = await Question.findById(test.Questions[i]._id);
+            question["Selected Option"] = answers[i][i];
+            await question.save();
+            console.log(question["Selected Option"]);
+        }
+
+    } catch (error) {
+        console.error("Error:", error);
+        res.status(500).json({ error: "An error occurred" });
+    }
+
+}
+
+module.exports = { addTest, getTestChat, getTest, saveSelectedOptionsToTest }
