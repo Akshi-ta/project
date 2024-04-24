@@ -10,21 +10,18 @@ const genAI = new GoogleGenerativeAI(process.env.API_KEY);
 
 
 async function fetchSubtopics(req, resp) {
-    console.log(req.body.obj.topic);
     try {
-        const topic = req.body.obj.topic;
+        const topic = req.body.topic;
         const model = genAI.getGenerativeModel({ model: "gemini-pro" });
         const prompt = `i will provide you a input from user which is the topic he want to learn from you. i want you to break that topic into smaller topics whose order will be from basic and easiest to advanced and hard, also give the average time taken by the student to learn that topic. output must be in the form of {"topic":"topic_name",  "subtopics":[ {"subtopic number" : "subtopic number" , "subtopic name" : "subtopic name"  , "duration":"duration"} ]} ensure that the response doesn't contain any character that make the response invalid json. valid json only , input = ${JSON.stringify(topic)}`;
         const result = await model.generateContent(prompt);
         const response = await result.response;
         const text = response.text();
         const jsontext = JSON.parse(text);
-        console.log(jsontext);
         const existingInfo = await User.findOne({ email: req.body.email });
         let list = [];
         let listToPass = [];
         for (let i = 0; i < jsontext.subtopics.length; i++) {
-            console.log(jsontext.subtopics[i]);
             const history = new History({
                 "history": []
             });
@@ -49,31 +46,26 @@ async function fetchSubtopics(req, resp) {
 
         }
 
-        // console.log(list);
-
-
         const newTopic = new Topic({
             topic: topic,
             subtopic: list,
         });
-        console.log(newTopic.topic);
         await newTopic.save();
         if (existingInfo) {
             let topicList = existingInfo.topics;
             topicList.push(newTopic._id);
             existingInfo.topics = topicList;
             await existingInfo.save();
-            resp.json({ status: true, out: listToPass , topicId:newTopic._id});
+            resp.json({ status: true, subtopics: listToPass , user: existingInfo, topicId:newTopic._id});
         }
         else {
-            // console.log(newTopic);
             let newUser = User({
                 email: req.body.email,
                 topics: [newTopic._id]
             });
             await newUser.save();
             resp.set("json");
-            resp.json({ status: true, out: newUser });
+            resp.json({ status: true, subtopics: listToPass, user: newUser,  topicId:newTopic._id });
         }
 
     } catch (error) {
@@ -85,13 +77,11 @@ async function fetchSubtopics(req, resp) {
 
 async function getSubtopics(req, resp) {
     const topicId = req.body.topicId;
-    // console.log(req.body);
     const Findtopic = await Topic.findById(topicId);
     if (!Findtopic) {
         return { status: false, rec: null, out: "topic not found" };
     }
     const topicName = Findtopic;
-    console.log(topicName);
     try {
         const topic = await Topic.findById(topicId).populate('subtopic');
         resp.json({status:true , out:topic.subtopic , topicName: Findtopic.topic  })

@@ -1,7 +1,12 @@
-const SignupInfo = require("../models/signup")
+const SignupInfo = require("../models/signup");
+const User = require("../models/user");
 
 function doSignup(req, resp) {
-    const info = new SignupInfo(req.body);
+    var user = User.find({ email: req.body.email });
+    if(user){
+        return resp.json({status: false, rec: null, out: "user already exists"})
+    }
+    const info = new User(req.body);
     console.log(info);
     info.save().then((ans) => {
         console.log(ans);
@@ -29,5 +34,10 @@ function doLogin(req, resp) {
     })
 }
 
+async function getUser(req, resp) {
+    const email = req.body.email;
+    var user = await User.findOne({ email: email });
+    resp.json({ status: true, out: user });
+}
 
-module.exports = { doLogin, doSignup }
+module.exports = { doLogin, doSignup, getUser }

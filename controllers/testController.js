@@ -192,21 +192,26 @@ async function getTest(req, resp) {
 
 }
 
-async function saveSelectedOptionsToTest(req, res) {
+async function saveSelectedOptionsToTest(req, resp) {
     try {
         const testId = req.body.testId;
         const answers = JSON.parse(req.body.answers);
         const test = await Test.findById(testId);
         if (!test) {
-            res.json({ status: false, out: "Test not found" });
+            resp.json({ status: false, out: "Test not found" });
         }
-        console.log(answers.length);
-        for (let i = 0; i < answers.length; i++) {
-            const question = await Question.findById(test.Questions[i]._id);
-            question["Selected Option"] = answers[i][i];
+        for(let i=0; i<test.Questions.length; i++){
+            const question = await Question.findById(test.Questions[i]);
+            question["Selected Option"] = answers[i+1];
             await question.save();
-            console.log(question["Selected Option"]);
         }
+        // for (let i = 0; i < answers.length; i++) {
+        //     const question = await Question.findById(test.Questions[i]._id);
+        //     question["Selected Option"] = answers[i][i];
+        //     await question.save();
+        //     console.log(question["Selected Option"]);
+        // }
+        resp.json({ status: true, out: "Selected options saved successfully" });
 
     } catch (error) {
         console.error("Error:", error);
