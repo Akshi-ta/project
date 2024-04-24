@@ -10,9 +10,9 @@ const genAI = new GoogleGenerativeAI(process.env.API_KEY);
 
 
 async function fetchSubtopics(req, resp) {
-    console.log(req.body.topic);
+    console.log(req.body.obj.topic);
     try {
-        const topic = req.body.topic;
+        const topic = req.body.obj.topic;
         const model = genAI.getGenerativeModel({ model: "gemini-pro" });
         const prompt = `i will provide you a input from user which is the topic he want to learn from you. i want you to break that topic into smaller topics whose order will be from basic and easiest to advanced and hard, also give the average time taken by the student to learn that topic. output must be in the form of {"topic":"topic_name",  "subtopics":[ {"subtopic number" : "subtopic number" , "subtopic name" : "subtopic name"  , "duration":"duration"} ]} , input = ${JSON.stringify(topic)}`;
         const result = await model.generateContent(prompt);
@@ -22,7 +22,8 @@ async function fetchSubtopics(req, resp) {
         console.log(jsontext);
         const existingInfo = await User.findOne({ email: req.body.email });
         let list = [];
-        for (let i = 0; i< jsontext.subtopics.length ; i++) {
+        let listToPass = [];
+        for (let i = 0; i < jsontext.subtopics.length; i++) {
             console.log(jsontext.subtopics[i]);
             const history = new History({
                 "history": []
@@ -36,6 +37,12 @@ async function fetchSubtopics(req, resp) {
             });
             await newSubTopic.save();
             list.push(newSubTopic._id);
+            listToPass.push({
+                id: newSubTopic._id,
+                subtopicNumber: jsontext.subtopics[i]["subtopic number"],
+                subtopicName: jsontext.subtopics[i]["subtopic name"],
+                duration: jsontext.subtopics[i]["duration"]
+            });
 
         }
 
@@ -43,16 +50,17 @@ async function fetchSubtopics(req, resp) {
 
 
         const newTopic = new Topic({
-            topic: req.body.topic,
+            topic: req.body.obj.topic,
             subtopic: list,
         });
+        console.log(newTopic.topic);
         await newTopic.save();
         if (existingInfo) {
             let topicList = existingInfo.topics;
             topicList.push(newTopic._id);
             existingInfo.topics = topicList;
             await existingInfo.save();
-            resp.json({ status: true, out: existingInfo });
+            resp.json({ status: true, out: listToPass , topicId:newTopic._id});
         }
         else {
             // console.log(newTopic);
@@ -71,4 +79,26 @@ async function fetchSubtopics(req, resp) {
     }
 }
 
-module.exports = { fetchSubtopics }
+
+async function getSubtopics(req, resp) {
+    const topicId = req.body.topicId;
+    // console.log(req.body);
+    const Findtopic = await Topic.findById(topicId);
+    if (!Findtopic) {
+        return { status: false, rec: null, out: "topic not found" };
+    }
+    const topicName = Findtopic;
+    console.log(topicName);
+    try {
+        const topic = await Topic.findById(topicId).populate('subtopic');
+        resp.json({status:true , out:topic.subtopic , topicName: Findtopic.topic  })
+    } catch (err) {
+        console.log("Error");
+        // console.error(err);
+    }
+    // console.log(topic);
+
+
+}
+
+module.exports = { fetchSubtopics, getSubtopics }
