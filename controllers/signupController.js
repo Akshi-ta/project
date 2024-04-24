@@ -1,15 +1,14 @@
-const SignupInfo = require("../models/signup");
 const User = require("../models/user");
+const Topic = require("../models/topic");
 
-function doSignup(req, resp) {
-    var user = User.find({ email: req.body.email });
+async function doSignup(req, resp) {
+    var user = await User.findOne({ email: req.body.email });
     if(user){
+        console.log(user);
         return resp.json({status: false, rec: null, out: "user already exists"})
     }
     const info = new User(req.body);
-    console.log(info);
     info.save().then((ans) => {
-        console.log(ans);
         // resp.send(ans);
         resp.json({ status: true, rec: ans, out: "yay" });
     }).catch((err) => {
@@ -19,14 +18,11 @@ function doSignup(req, resp) {
 }
 
 function doLogin(req, resp) {
-    SignupInfo.find({ email: req.body.email }).then((result) => {
-        console.log(result[0]);
+    User.find({ email: req.body.email }).then((result) => {
         if (result[0].password === req.body.password) {
-            console.log("trueeeee");
             resp.json({ status: true, res: "password matches", type: result[0].utype});
         }
         else {
-            console.log("password doesn't match");
             resp.json({ status: false, res: "password doesn't match" });
         }
     }).catch(function (err) {
@@ -35,9 +31,21 @@ function doLogin(req, resp) {
 }
 
 async function getUser(req, resp) {
-    const email = req.body.email;
+    const email = req.params.email;
     var user = await User.findOne({ email: email });
-    resp.json({ status: true, out: user });
+    const list = [];
+    for(let i=0; i<user.topics.length; i++){
+        console.log(user.topics[i]);
+        var topic = await Topic.findById(user.topics[i]._id);
+        list.push(topic);
+    }
+    resp.json({ 
+        status: true, 
+        out: {
+            email: user.email,
+            topics: list
+        } 
+    });
 }
 
 module.exports = { doLogin, doSignup, getUser }
