@@ -42,8 +42,8 @@ async function fetchSubtopics(req, resp) {
             list.push(newSubTopic._id);
             listToPass.push({
                 id: newSubTopic._id,
-                subtopicNumber: jsontext.subtopics[i]["subtopic number"],
-                subtopicName: jsontext.subtopics[i]["subtopic name"],
+                "subtopic number": jsontext.subtopics[i]["subtopic number"],
+                "subtopic name": jsontext.subtopics[i]["subtopic name"],
                 duration: jsontext.subtopics[i]["duration"]
             });
 
@@ -53,7 +53,7 @@ async function fetchSubtopics(req, resp) {
 
 
         const newTopic = new Topic({
-            topic: req.body.obj.topic,
+            topic: topic,
             subtopic: list,
         });
         console.log(newTopic.topic);

@@ -15,9 +15,9 @@ app.post("/getSubtopics" , getSubtopics);
 app.post("/test" , getTest);
 app.post("/test/chat", getTestChat);
 app.post("/learn" , getDetails);
+app.post("/learn/chat" , getLearnChat);
 
 app.post("/signup" ,doSignup); 
 app.post("/dologin", doLogin);
 
-app.post("/learn/chat" , getLearnChat);
 module.exports = app;
