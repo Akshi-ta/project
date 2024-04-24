@@ -196,7 +196,8 @@ async function getTest(req, resp) {
 async function saveSelectedOptionsToTest(req, resp) {
     try {
         const testId = req.body.testId;
-        const answers = JSON.parse(req.body.answers);
+        console.log(req.body.answers);
+        const answers = req.body.answers;
         const test = await Test.findById(testId);
         if (!test) {
             resp.json({ status: false, out: "Test not found" });
@@ -216,7 +217,7 @@ async function saveSelectedOptionsToTest(req, resp) {
 
     } catch (error) {
         console.error("Error:", error);
-        res.status(500).json({ error: "An error occurred" });
+        resp.status(500).json({ error: "An error occurred" });
     }
 
 }
