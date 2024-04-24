@@ -9,6 +9,24 @@ dotenv.config();
 const genAI = new GoogleGenerativeAI(process.env.API_KEY);
 
 
+async function getUser(email) {
+    var user = await User.findOne({ email: email });
+    const list = [];
+    for(let i=0; i<user.topics.length; i++){
+        console.log(user.topics[i]);
+        var topic = await Topic.findById(user.topics[i]._id);
+        list.push(topic);
+    }
+    return{ 
+        status: true, 
+        out: {
+            email: user.email,
+            topics: list
+        } 
+    };
+}
+
+
 async function fetchSubtopics(req, resp) {
     try {
         const topic = req.body.topic;
@@ -56,7 +74,7 @@ async function fetchSubtopics(req, resp) {
             topicList.push(newTopic._id);
             existingInfo.topics = topicList;
             await existingInfo.save();
-            resp.json({ status: true, subtopics: listToPass , user: existingInfo, topicId:newTopic._id});
+            resp.json({ status: true, subtopics: listToPass , user: (await getUser(req.body.email)), topicId:newTopic._id});
         }
         else {
             let newUser = User({
@@ -64,8 +82,8 @@ async function fetchSubtopics(req, resp) {
                 topics: [newTopic._id]
             });
             await newUser.save();
-            resp.set("json");
-            resp.json({ status: true, subtopics: listToPass, user: newUser,  topicId:newTopic._id });
+            
+            resp.json({ status: true, subtopics: listToPass, user: (await getUser(req.body.email)),  topicId:newTopic._id });
         }
 
     } catch (error) {

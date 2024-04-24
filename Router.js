@@ -23,6 +23,6 @@ app.post("/learn/chat" , getLearnChat);
 app.post("/signup" ,doSignup); 
 app.post("/dologin", doLogin);
 
-app.get("/getUser", getUser)
+app.get("/getUser/:email", getUser)
 
 module.exports = app;
