@@ -21,7 +21,7 @@ async function insertTestIntoSubtopic(subtopicID, questions) {
         for (let i = 0; i < questions.length; i++) {
             let options = [];
             for (let i = 0; i < questions[i].options.length; i++) {
-                console.log(questions[i]);
+                // console.log(questions[i]);
                 const option = {
                     "Option Number": i + 1,
                     "Option": questions[i].options[i].Option
@@ -53,7 +53,7 @@ async function insertTestIntoSubtopic(subtopicID, questions) {
         //add test to subtopic
         subtopic.test.push(savedTest._id);
         await subtopic.save();
-        return { status: true, rec: test._id, out: "Test added successfully" };
+        return { status: true, response: savedTest, testId:savedTest._id , out: "Test added successfully" };
     } catch (err) {
         console.log(err);
     }
@@ -64,20 +64,21 @@ async function addTest(req, resp) {
         const topicName = req.body.topicName;
         const subtopicName = req.body.subtopicName;
         const subtopic = req.body.subtopic;
+        // console.log(subtopic);
         const model = genAI.getGenerativeModel({ model: "gemini-pro" });
         const prompt = `i will give you the subtopic as input and you have to provide the test of 5 MCQs for each subtopic. Output must be of the form {"subtopic":"subtopicname" , "Questions" : [{"question number" : "question number" , "Question" : "Question" , "options":[{"Option number":1, "Option":"a"}] , "correct option" : correct_option_number}]}
         input: topic =  ${topicName} , subtopic = ${subtopicName}`;
         const result = await model.generateContent(prompt);
         const response = await result.response;
         const text = response.text();
-        console.log(text);
+        // console.log(text);
         const parsedText = JSON.parse(text);
         const questions = parsedText.Questions;
         console.log(questions);
         const ans = await insertTestIntoSubtopic(subtopic, questions);
         // console.log(ans);
         resp.set("json");
-        resp.json({ status: true, response: ans, out: "yay" });
+        resp.json({ status: true, response: ans, questions:questions , out: "yay" });
 
     } catch (error) {
         console.error("Error:", error);
