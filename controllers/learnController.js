@@ -29,13 +29,13 @@ async function insertTextIntoLearn(subtopicID, message, topicName, subtopicName)
                 {
                     role: "user",
                     parts: [{ text: `Below is the explanation for the topic ${topicName} and subtopic ${subtopicName} you gave. you are a online tutor and now you are required to answer the questions of a student who might have read this explanation but still doesn't fully undersntand it. you are required to judge the students understanding level and answer accordingly. Explanation: ${subtopic.learn.explanation}` }]
-                }, 
-                { 
-                    role: "model", 
-                    parts: [{ text: "Thanks for providing the explanation" } ,] 
+                },
+                {
+                    role: "model",
+                    parts: [{ text: "Thanks for providing the explanation" },]
                 }
             ];
-        }else{
+        } else {
             chatHistory = history.history;
         }
 
@@ -65,8 +65,15 @@ async function getDetails(req, resp) {
         const subtopic = await Subtopic.findById(subtopicId);
 
         if (subtopic.learn.explanation !== "") {
-            console.log(subtopic.learn.explanation);
-            resp.json({ status: true, response: subtopic.learn.explanation });
+            const history = await History.findById(subtopic.learn.chat);
+            console.log(history.history);
+            resp.json({ 
+                status: true, 
+                response: { 
+                    explanation: subtopic.learn.explanation,
+                    history: history.history
+                }
+            });
         } else {
             const model = genAI.getGenerativeModel({ model: "gemini-pro" });
             const prompt = `give the detailed explanation using diagrams and everything to explain the given input in the good presented and detailed way like you are teaching to someone who have no idea of the given topic, output must not contain any letter which cannot be parsed by JSON.parse
@@ -76,7 +83,7 @@ async function getDetails(req, resp) {
             const text = response.text();
             subtopic.learn.explanation = text;
             await subtopic.save();
-            resp.json({ status: true, response: text });
+            resp.json({ status: true, response: { explanation: text, history: [] } });
         }
     } catch (error) {
         console.error("Error:", error);
