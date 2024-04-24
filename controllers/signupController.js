@@ -1,5 +1,6 @@
 const User = require("../models/user");
 const Topic = require("../models/topic");
+const Subtopic = require("../models/subtopic");
 
 async function doSignup(req, resp) {
     var user = await User.findOne({ email: req.body.email });
@@ -35,9 +36,16 @@ async function getUser(req, resp) {
     var user = await User.findOne({ email: email });
     const list = [];
     for(let i=0; i<user.topics.length; i++){
-        console.log(user.topics[i]);
+        const subTopicList = [];
         var topic = await Topic.findById(user.topics[i]._id);
-        list.push(topic);
+        for(var j=0; j<topic.subtopic.length; j++){
+            var subTopic = await Subtopic.findById(topic.subtopic[j]._id);
+            subTopicList.push(subTopic);
+        }
+        list.push({
+            topic: topic.topic,
+            subtopic: subTopicList
+        });
     }
     resp.json({ 
         status: true, 
