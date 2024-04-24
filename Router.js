@@ -3,7 +3,7 @@ const { fetchSubtopics , getSubtopics} = require("./controllers/topicController"
 const { addTest, getTestChat, getTest, saveSelectedOptionsToTest } = require("./controllers/testController");
 
 // const { getDetails } = require("./controllers/learnController");
-const {doSignup , doLogin}  = require("./controllers/signupController");
+const {doSignup , doLogin, getUser}  = require("./controllers/signupController");
 
 const { getDetails, getLearnChat } = require("./controllers/learnController");
 
@@ -22,5 +22,7 @@ app.post("/learn/chat" , getLearnChat);
 
 app.post("/signup" ,doSignup); 
 app.post("/dologin", doLogin);
+
+app.get("/getUser", getUser)
 
 module.exports = app;

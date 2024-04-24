@@ -1,13 +1,11 @@
 const mongoose = require("mongoose");
 const userSchema = mongoose.Schema({
-    email : {
-        type: String,
-        required: true
-    },
-    topics:[{
+    email: { type: String, unique: true, required: true, index: true },
+    topics: [{
         type: mongoose.Schema.Types.ObjectId,
-        ref:'Topic'
-    }]
+        ref: 'Topic'
+    }],
+    password: { type: String }
 },
     {
         versionKey: false,
